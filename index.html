@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>디데이 계산기</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --card: #fff; --text: #1f2430; --muted: #7a8194;
+    --primary: #4f6bff; --primary-soft: #e8ecff; --border: #e2e6f0; --danger: #e5484d;
+    --bg-grad: linear-gradient(180deg, #ffeef4 0%, #fff7ee 55%, #eaf6ff 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141b; --card: #1c1f2a; --text: #eef0f6; --muted: #98a0b5;
+      --primary: #7c91ff; --primary-soft: #262c4a; --border: #2c3040; --danger: #ff6b70;
+      --bg-grad: linear-gradient(180deg, #1d1830 0%, #17192a 60%, #12202e 100%);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 20px; text-align: center; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  input[type=text], input[type=date] {
+    width: 100%; padding: 11px 12px; font-size: 16px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  }
+  input:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+  .field { margin-bottom: 14px; }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 0; color: var(--text); }
+  .btns { display: flex; gap: 8px; margin-top: 16px; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 10px; padding: 11px 14px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+  }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; flex: 1; }
+  .result { text-align: center; }
+  .result .title { color: var(--muted); font-size: 14px; min-height: 20px; }
+  .result .dday { font-size: 56px; font-weight: 800; color: var(--primary); margin: 6px 0; letter-spacing: -1px; }
+  .result .sub { font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+  .chip { background: var(--primary-soft); color: var(--primary); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+  .list-title { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+  .item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 0; border-top: 1px solid var(--border);
+  }
+  .item:first-of-type { border-top: 0; }
+  .item .name { font-weight: 600; }
+  .item .date { font-size: 12px; color: var(--muted); }
+  .item .d { font-weight: 800; color: var(--primary); white-space: nowrap; }
+  .item .del { color: var(--danger); border: 0; background: none; padding: 4px 8px; }
+  .item .info { flex: 1; cursor: pointer; }
+  .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 8px 0; }
+  /* ---- 토끼 배경 ---- */
+  body {
+    background: var(--bg-grad);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .decor { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .decor svg { position: absolute; display: block; }
+  .decor .b1 { width: 120px; left: 12px; bottom: -6px; animation: hop 3.2s ease-in-out infinite; }
+  .decor .b2 { width: 96px; right: 14px; bottom: -4px; transform: scaleX(-1); animation: hop 3.8s ease-in-out .6s infinite; }
+  .decor .b3 { width: 64px; left: 8%; top: 70px; opacity: .9; animation: sway 5s ease-in-out infinite; }
+  .decor .b4 { width: 56px; right: 7%; top: 120px; transform: scaleX(-1); opacity: .9; animation: sway 6s ease-in-out 1s infinite; }
+  .decor .f { position: absolute; font-size: 26px; opacity: .85; animation: float 7s ease-in-out infinite; }
+  .decor .f1 { left: 4%; top: 38%; }
+  .decor .f2 { right: 5%; top: 46%; animation-delay: 1.5s; font-size: 22px; }
+  .decor .f3 { left: 14%; bottom: 22%; animation-delay: 3s; font-size: 20px; }
+  .decor .f4 { right: 16%; bottom: 26%; animation-delay: 4.5s; }
+  .decor .f5 { left: 46%; top: 8px; animation-delay: 2s; font-size: 22px; }
+  .peek { position: absolute; width: 70px; top: -52px; right: 24px; z-index: -1; }
+  .peek.left { right: auto; left: 24px; width: 60px; top: -44px; transform: scaleX(-1); }
+  .result { position: relative; margin-top: 56px; }
+  .result.is-dday .peek { animation: hop 0.7s ease-in-out infinite; }
+  @keyframes hop { 0%,100% { translate: 0 0; } 50% { translate: 0 -14px; } }
+  @keyframes sway { 0%,100% { rotate: -5deg; } 50% { rotate: 5deg; } }
+  @keyframes float { 0%,100% { translate: 0 0; } 50% { translate: 0 -16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .decor *, .peek { animation: none !important; }
+  }
+  @media (max-width: 520px) {
+    .decor .b3, .decor .b4 { display: none; }
+  }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+  .result.is-dday { cursor: pointer; }
+  .result .hint { font-size: 12px; color: var(--muted); margin-top: 10px; display: none; }
+  .result.is-dday .hint { display: block; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="bunny" viewBox="0 0 100 124">
+      <g stroke="#f1c4d2" stroke-width="1.6">
+        <g transform="rotate(-9 38 52)">
+          <ellipse cx="37" cy="27" rx="11" ry="26" fill="#fff"/>
+          <ellipse cx="37" cy="30" rx="5.5" ry="17" fill="#ffc2d4" stroke="none"/>
+        </g>
+        <g transform="rotate(9 62 52)">
+          <ellipse cx="63" cy="27" rx="11" ry="26" fill="#fff"/>
+          <ellipse cx="63" cy="30" rx="5.5" ry="17" fill="#ffc2d4" stroke="none"/>
+        </g>
+        <ellipse cx="50" cy="96" rx="28" ry="24" fill="#fff"/>
+        <ellipse cx="35" cy="116" rx="10" ry="6" fill="#fff"/>
+        <ellipse cx="65" cy="116" rx="10" ry="6" fill="#fff"/>
+        <circle cx="50" cy="66" r="29" fill="#fff"/>
+      </g>
+      <circle cx="40" cy="64" r="3.4" fill="#3a2f3f"/>
+      <circle cx="60" cy="64" r="3.4" fill="#3a2f3f"/>
+      <circle cx="41.1" cy="62.8" r="1.1" fill="#fff"/>
+      <circle cx="61.1" cy="62.8" r="1.1" fill="#fff"/>
+      <ellipse cx="32" cy="74" rx="5.5" ry="3.6" fill="#ffb3c6" opacity=".85"/>
+      <ellipse cx="68" cy="74" rx="5.5" ry="3.6" fill="#ffb3c6" opacity=".85"/>
+      <ellipse cx="50" cy="70" rx="2.6" ry="1.9" fill="#ff8fab"/>
+      <path d="M50 72 q-3 5 -7 2 M50 72 q3 5 7 2" fill="none" stroke="#3a2f3f" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="decor" aria-hidden="true">
+  <span class="f f1">🥕</span><span class="f f2">🌸</span><span class="f f3">🍀</span>
+  <span class="f f4">☁️</span><span class="f f5">💗</span>
+  <svg class="b1" viewBox="0 0 100 124"><use href="#bunny"/></svg>
+  <svg class="b2" viewBox="0 0 100 124"><use href="#bunny"/></svg>
+  <svg class="b3" viewBox="0 0 100 124"><use href="#bunny"/></svg>
+  <svg class="b4" viewBox="0 0 100 124"><use href="#bunny"/></svg>
+</div>
+
+<div class="wrap">
+  <h1>🐰 디데이 계산기</h1>
+
+  <div class="card">
+    <div class="field">
+      <label for="title">이름 (선택)</label>
+      <input type="text" id="title" placeholder="예: 수능, 여행, 기념일" maxlength="30">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="base">기준일</label>
+        <input type="date" id="base">
+      </div>
+      <div class="field">
+        <label for="target">목표일</label>
+        <input type="date" id="target">
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="inclusive"> 기준일을 1일째로 계산 (+1일)</label>
+    <div class="btns">
+      <button class="primary" id="save">목록에 저장</button>
+      <button id="today">오늘로</button>
+    </div>
+  </div>
+
+  <div class="card result" id="result">
+    <svg class="peek left" viewBox="0 0 100 124" aria-hidden="true"><use href="#bunny"/></svg>
+    <svg class="peek" viewBox="0 0 100 124" aria-hidden="true"><use href="#bunny"/></svg>
+    <div class="title" id="rTitle"></div>
+    <div class="dday" id="rD">D-?</div>
+    <div class="sub" id="rSub">목표일을 선택하세요</div>
+    <div class="chips" id="rChips"></div>
+    <div class="hint">🎆 클릭하면 다시 터져요</div>
+  </div>
+
+  <div class="card">
+    <p class="list-title">저장된 디데이</p>
+    <div id="list"></div>
+  </div>
+</div>
+<canvas id="fx"></canvas>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'dday-list-v1';
+  var DAY = 86400000;
+  var WD = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  // YYYY-MM-DD -> UTC 자정 타임스탬프 (DST 영향 없이 일수 계산)
+  function utc(s) {
+    var p = s.split('-');
+    return Date.UTC(+p[0], +p[1] - 1, +p[2]);
+  }
+  function diffDays(base, target, inclusive) {
+    var d = Math.round((utc(target) - utc(base)) / DAY);
+    if (inclusive) d += d >= 0 ? 1 : -1;
+    return d;
+  }
+  function label(d) { return d === 0 ? 'D-Day' : d > 0 ? 'D-' + d : 'D+' + (-d); }
+  function fmt(s) {
+    var t = new Date(utc(s));
+    return t.getUTCFullYear() + '년 ' + (t.getUTCMonth() + 1) + '월 ' + t.getUTCDate() + '일 (' + WD[t.getUTCDay()] + ')';
+  }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; }
+  }
+  function store(list) {
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  // ---- 폭죽 효과 ----
+  var canvas = $('fx'), ctx = canvas.getContext('2d');
+  var particles = [], rockets = [], running = false, VW = 800, VH = 600;
+  var COLORS = ['#ff4d6d', '#ffd23f', '#4fd1c5', '#4f6bff', '#b86bff', '#ff9f43', '#7bed9f'];
+
+  function resize() {
+    var r = window.devicePixelRatio || 1;
+    VW = window.innerWidth || document.documentElement.clientWidth || 800;
+    VH = window.innerHeight || document.documentElement.clientHeight || 600;
+    canvas.width = VW * r;
+    canvas.height = VH * r;
+    ctx.setTransform(r, 0, 0, r, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function burst(x, y) {
+    var base = COLORS[Math.floor(Math.random() * COLORS.length)];
+    var n = 70 + Math.floor(Math.random() * 30);
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 5;
+      particles.push({
+        x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 1, decay: 0.012 + Math.random() * 0.012,
+        color: Math.random() < 0.7 ? base : COLORS[Math.floor(Math.random() * COLORS.length)],
+        size: 1.5 + Math.random() * 2
+      });
+    }
+  }
+  function launch() {
+    var w = VW, h = VH;
+    rockets.push({
+      x: w * (0.15 + Math.random() * 0.7), y: h,
+      vy: -(8 + Math.random() * 4), ty: h * (0.15 + Math.random() * 0.35)
+    });
+  }
+  function frame() {
+    ctx.clearRect(0, 0, VW, VH);
+    rockets = rockets.filter(function (r) {
+      r.y += r.vy; r.vy *= 0.985;
+      ctx.fillStyle = '#ffe9a8';
+      ctx.fillRect(r.x - 1.5, r.y, 3, 10);
+      if (r.y <= r.ty || r.vy > -1.5) { burst(r.x, r.y); return false; }
+      return true;
+    });
+    particles = particles.filter(function (p) {
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.98; p.vy = p.vy * 0.98 + 0.06; p.life -= p.decay;
+      if (p.life <= 0) return false;
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      return true;
+    });
+    ctx.globalAlpha = 1;
+    if (rockets.length || particles.length) requestAnimationFrame(frame);
+    else running = false;
+  }
+  function fireworks() {
+    var count = 8;
+    resize();
+    burst(VW / 2, VH * 0.3); // 즉시 한 발
+    for (var i = 0; i < count; i++) setTimeout(launch, i * 350 + Math.random() * 150);
+    if (!running) { running = true; requestAnimationFrame(frame); }
+  }
+  var wasDday = false, lastKey = '';
+
+  function render() {
+    var base = $('base').value, target = $('target').value, inc = $('inclusive').checked;
+    $('rTitle').textContent = $('title').value.trim();
+    var chips = $('rChips'); chips.innerHTML = '';
+    if (!base || !target) {
+      $('rD').textContent = 'D-?';
+      $('rSub').textContent = '목표일을 선택하세요';
+      $('result').classList.remove('is-dday'); wasDday = false;
+      return;
+    }
+    var d = diffDays(base, target, inc);
+    $('rD').textContent = label(d);
+    $('result').classList.toggle('is-dday', d === 0);
+    var key = base + '|' + target + '|' + inc;
+    if (d === 0 && key !== lastKey) fireworks();
+    lastKey = key;
+    wasDday = d === 0;
+    var abs = Math.abs(d);
+    $('rSub').textContent = fmt(target) + (d === 0 ? ' · 바로 오늘!' : d > 0 ? ' · ' + abs + '일 남음' : ' · ' + abs + '일 지남');
+    var parts = [];
+    parts.push(Math.floor(abs / 7) + '주 ' + (abs % 7) + '일');
+    parts.push(abs + '일');
+    parts.push(abs * 24 + '시간');
+    parts.forEach(function (t) {
+      var c = document.createElement('span'); c.className = 'chip'; c.textContent = t; chips.appendChild(c);
+    });
+  }
+
+  function renderList() {
+    var list = load(), box = $('list'), today = iso(new Date());
+    box.innerHTML = '';
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">저장된 디데이가 없습니다</div>';
+      return;
+    }
+    list.sort(function (a, b) {
+      return Math.abs(diffDays(today, a.target)) - Math.abs(diffDays(today, b.target));
+    });
+    list.forEach(function (it) {
+      var row = document.createElement('div'); row.className = 'item';
+      var info = document.createElement('div'); info.className = 'info';
+      var n = document.createElement('div'); n.className = 'name'; n.textContent = it.title || '(이름 없음)';
+      var dt = document.createElement('div'); dt.className = 'date'; dt.textContent = fmt(it.target);
+      info.appendChild(n); info.appendChild(dt);
+      info.onclick = function () {
+        $('title').value = it.title; $('target').value = it.target; $('base').value = today; render();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      var d = document.createElement('div'); d.className = 'd'; d.textContent = label(diffDays(today, it.target));
+      var del = document.createElement('button'); del.className = 'del'; del.textContent = '삭제';
+      del.onclick = function () {
+        store(load().filter(function (x) { return x.id !== it.id; })); renderList();
+      };
+      row.appendChild(info); row.appendChild(d); row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  $('save').onclick = function () {
+    var target = $('target').value;
+    if (!target) { $('target').focus(); return; }
+    var list = load();
+    list.push({ id: Date.now(), title: $('title').value.trim(), target: target });
+    store(list); renderList();
+  };
+  $('result').onclick = function () { if (wasDday) fireworks(); };
+  $('today').onclick = function () { $('base').value = iso(new Date()); render(); };
+  ['title', 'base', 'target', 'inclusive'].forEach(function (id) {
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  $('base').value = iso(new Date());
+  render(); renderList();
+})();
+</script>
+</body>
+</html>
